@@ -1,6 +1,7 @@
 from itertools import cycle
 from .TicTacToeBoard import *
 from pprint import pprint
+import math
 
 BOARD_SIZE = 3
 DEFAULT_PLAYERS = (
@@ -95,7 +96,14 @@ class TicTacToeGame:
     def get_computer_next_move(self):
         move = self.block_move(self.board_size-1)
         if move is None:
-            move = self.next_open_spot()
+            move = self.get_center_space()
+            if move is None:
+                if self.check_opponent_center_space():
+                    move = self.get_corner_next()
+                else:
+                    move = self.get_not_corner_next()
+                if move is None:
+                    move = self.next_open_spot()
 
         return move
     
@@ -118,6 +126,54 @@ class TicTacToeGame:
                 return Move(block.row, block.col, self.current_player.label)
 
         return None
+    
+    def check_opponent_center_space(self):
+        if self.board_size % 2 == 0:
+            return False
+        
+        center = math.floor(self.board_size / 2)
+        if self._current_moves[center][center].label not in ["", self.current_player.label]:
+            return True
+        
+        return False
+
+    def get_center_space(self):
+        if self.board_size % 2 == 0:
+            return None
+        
+        center = math.floor(self.board_size / 2)
+        if self._current_moves[center][center].label == "":
+            return Move(center, center, self.current_player.label)
+
+        return None
+    
+    def get_not_corner_next(self):
+        edge = self.board_size - 1
+        moves = [(m.row, m.col) 
+                 for row in self._current_moves 
+                 for m in row 
+                 if m.label == '' and (m.row, m.col) not in [(0,0),(0,edge),(edge,0),(edge,edge)]]
+        
+        if len(moves) == 0:
+            return None
+        else:
+            (row, col) = moves[0]
+            move = Move(row, col, self.current_player.label)
+            return move
+        
+    def get_corner_next(self):
+        edge = self.board_size - 1
+        moves = [(m.row, m.col) 
+                 for row in self._current_moves 
+                 for m in row 
+                 if m.label == '' and (m.row, m.col) in [(0,0),(0,edge),(edge,0),(edge,edge)]]
+        
+        if len(moves) == 0:
+            return None
+        else:
+            (row, col) = moves[0]
+            move = Move(row, col, self.current_player.label)
+            return move
 
     def next_open_spot(self):
         """Return the next available move on the board."""
